@@ -101,6 +101,9 @@ Route::middleware(['XSS','isInstalled'])->group(function () {
                 Route::post('products/get-variants', [ProductController::class, 'variants'])->name('get-variants');
                 Route::post('products/get-variants-edit', [ProductController::class, 'variantsEdit'])->name('get-variants-edit');
                 Route::post('products/get-attribute-values', [ProductController::class, 'getAttributeValues'])->name('get-attribute-values');
+                Route::post('products/get-product-attribute-values', [ProductController::class, 'getProductAttributeValues'])->name('get-product-attribute-values');
+                Route::post('products/edit-product-attribute-values', [ProductController::class, 'ProductattributeValuesEdite'])->name('edite-product-attribute-values');
+
                 Route::delete('delete/products/{id}', [CommonController::class, 'delete'])->middleware('PermissionCheck:product_delete|wholesale_product_delete');
                 Route::get('product-restore/{id}', [ProductController::class, 'restore'])->name('product.restore')->middleware('PermissionCheck:product_restore|wholesale_product_restore');
 

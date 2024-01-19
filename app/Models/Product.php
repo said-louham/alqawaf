@@ -5,6 +5,7 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Product extends Model
@@ -46,11 +47,16 @@ class Product extends Model
         'contact_info'      => '[]',
     ];
 
-    protected $fillable = ['name', 'user_id', 'brand_id', 'category_id', 'created_by', 'slug', 'price', 'purchase_cost',
+    protected $fillable = ['name', 'user_id', 'brand_id','attribute_id', 'category_id', 'created_by', 'slug', 'price', 'purchase_cost',
         'barcode', 'video_provider', 'video_url', 'current_stock', 'minimum_order_quantity', 'is_approved', 'is_catalog',
         'external_link', 'is_refundable', 'cash_on_delivery', 'attribute_sets','images', 'meta_image', 'colors',
         'selected_variants', 'selected_variants_ids', 'contact_info','status'
     ];
+
+      public function attributeValues():HasMany
+    {
+        return $this->hasMany(ProductAttributeValue::class,'product_id');
+    }
 
     public function createdBy()
     {
@@ -60,6 +66,12 @@ class Product extends Model
     public function brand(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Brand::class)->with('currentLanguage');
+    }
+
+
+    public function attribute(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Attribute::class)->with('currentLanguage');
     }
 
     public function productLanguages()
