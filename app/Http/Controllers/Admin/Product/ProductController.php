@@ -139,10 +139,7 @@ class ProductController extends Controller
             'attributes'    => $this->attributes->all()->where('lang', 'en')->get(),
             'campaigns'     => \App\Models\Campaign::where('status', 1)->where('end_date','>',Carbon::now()->format('Y-m-d'))->get(),
             'r'             => $request->r != ''? $request->r : $request->server('HTTP_REFERER'),
-//            'attributes_data'=>Attribute::select(['id'])->with(['attributeValue:id,attribute_id,value'])->get()
-
         ];
-//        dd($data['attributes_data']->toArray());
         return view('admin.products.products.form',$data);
     }
     public function createDigitalProduct(Request $request)
@@ -190,7 +187,6 @@ class ProductController extends Controller
 
     public function edit($id, Request $request){
         try {
-
            // session()->forget('attributes');
             $languages  = $this->languages->all()->orderBy('id', 'asc')->get();
 
