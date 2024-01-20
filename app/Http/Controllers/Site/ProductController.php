@@ -222,6 +222,7 @@ class ProductController extends Controller
 
             $product->form          = [
                 'attribute_values'  => [],
+                'product_attribute_values' => $product->ProductattributeValues()->with('attributeValue')->get() ,
                 'id'                => $product->id,
                 'quantity'          => $product->minimum_order_quantity ? (int)$product->minimum_order_quantity : 1,
             ];

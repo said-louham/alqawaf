@@ -53,7 +53,7 @@ class Product extends Model
         'selected_variants', 'selected_variants_ids', 'contact_info','status'
     ];
 
-      public function attributeValues():HasMany
+      public function ProductattributeValues():HasMany
     {
         return $this->hasMany(ProductAttributeValue::class,'product_id');
     }

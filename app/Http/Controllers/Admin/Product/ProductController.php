@@ -255,7 +255,7 @@ class ProductController extends Controller
 
                 $attributeValues->each(function ($value) use ($product, $request) {
 
-                    $product->attributeValues()->create([
+                    $product->ProductattributeValues()->create([
                         'attribute_id' => $request->attribute_id,
                         'attribute_value_id' =>  $value['attribute_value_id'],
                         'price' => $value['price'],
@@ -358,7 +358,7 @@ class ProductController extends Controller
                             'price' => $value['price'],
                         ]);
                     } else {
-                        $product->attributeValues()->create([
+                        $product->ProductattributeValues()->create([
                             'attribute_id'       => $request->attribute_id,
                             'attribute_value_id' => $attributeValueId,
                             'price'              => $value['price'],

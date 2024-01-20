@@ -152,28 +152,51 @@
 							<div class="product-offer product-border" v-if="productDetails.short_description" v-html="productDetails.short_description">
               </div>
 							<!-- product-offer -->
-							<div class="product-details-totalPrice product-border" v-if="productDetails.is_digital != 1 && productDetails.is_catalog != 1 && productDetails.is_classified != 1">
-								<div class="count-quantity" data-trigger="spinner">
-									<a class="btn pull-left" href="javascript:void(0);" data-spin="down" @click="cartMinus">
-										<span class="mdi mdi-name mdi-minus"></span>
-									</a>
-									<input type="text" name="quantity" @focusout="quantityCheck" v-model="product_form.quantity" title="quantity" class="input-text" />
-									<a class="btn pull-right" href="javascript:void(0);" data-spin="up" @click="cartPlus">
-										<span class="mdi mdi-name mdi-plus"></span>
-									</a>
-								</div>
-								<h3>{{ lang.total_price }}:
-									<span v-if="productDetails.special_discount_check > 0 && productDetails.is_wholesale != 1">{{ priceFormat(productDetails.product_stock.discount_percentage * product_form.quantity) }} </span>
-									<span v-else-if="productDetails.is_wholesale != 1">{{ priceFormat(productDetails.product_stock.price * product_form.quantity) }}</span>
-									<span v-if="productDetails.is_wholesale == 1">{{ priceFind() }}</span>
-								</h3>
-							</div>
+					<div class="product-details-totalPrice product-border d-flex justify-between" v-if="productDetails.is_digital != 1 && productDetails.is_catalog != 1 && productDetails.is_classified != 1">
+     <div> <!-- Use flex-grow-1 to fill available space -->
+        <div class="count-quantity " data-trigger="spinner">
+            <a class="btn pull-left" href="javascript:void(0);" data-spin="down" @click="cartMinus">
+                <span class="mdi mdi-name mdi-minus"></span>
+            </a>
+            <input type="text" name="quantity" @focusout="quantityCheck" v-model="product_form.quantity" title="quantity" class="input-text" />
+            <a class="btn pull-right" href="javascript:void(0);" data-spin="up" @click="cartPlus">
+                <span class="mdi mdi-name mdi-plus"></span>
+            </a>
+        </div>
+    </div>
+      <h3 class="text-center flex-grow-1 ">
+                {{ lang.total_price }}:
+                <span v-if="selectedValue !== null">
+                    {{ total_price }}
+                </span>
+                <span v-else>
+                    <span v-if="productDetails.special_discount_check > 0 && productDetails.is_wholesale != 1">
+                        {{ priceFormat(productDetails.product_stock.discount_percentage * product_form.quantity) }}
+                    </span>
+                    <span v-else-if="productDetails.is_wholesale != 1">
+                        {{ priceFormat(productDetails.product_stock.price * product_form.quantity) }}
+                    </span>
+                    <span v-if="productDetails.is_wholesale == 1">
+                        {{ priceFind() }}
+                    </span>
+                </span>
+            </h3>
 
+              <div class="form-group ">
+                  <label for="attributeValues">Select Attribute Value:</label>
+                  <select class="form-control text-center bg-danger" v-model="selectedValue" id="attributeValues">
+                      <option value="" disabled>Select an option</option>
+                      <option v-for="option in productDetails.form.product_attribute_values" :key="option.id" :value="option.price">
+                          {{ option.attribute_value.value }}
+                      </option>
+                  </select>
+              </div>
+
+          </div>
 							<div v-if="productDetails.is_catalog != 1" class="product-details-query mt-3 product-border">
 								<h3 v-if="productDetails.is_digital == 0 && productDetails.estimated_shipping_days">
 									{{ productDetails.estimated_shipping_days }}
-									{{ lang.days }} <span>{{ lang.estimated_delivery_time }}</span></h3
-								>
+									{{ lang.days }} <span>{{ lang.estimated_delivery_time }}</span></h3>
 
 								<div class="product-cart sg-quantity" v-if="productType()">
 									<div class="buttons d-flex align-items-center">
@@ -583,6 +606,7 @@ export default {
 	props: ["productDetails"],
 	data() {
 		return {
+      selectedValue: null, // Holds the selected attribute value
 			clickedSlide: 0,
 			currentCarousel: "0",
 			added_to_cart: false,
@@ -723,7 +747,10 @@ export default {
 		},
     index(){
       console.log(this.index);
-    }
+    },
+     selectedValue: function () {
+      this.updateTotalPrice();
+    },
 	},
 	computed: {
 		compareProducts() {
@@ -744,6 +771,20 @@ export default {
 		},
 	},
 	methods: {
+  updateTotalPrice() {
+      let totalPrice;
+
+      let selectedValue = this.selectedValue ?? this.productDetails?.product_stock?.price;
+
+      if (this.productDetails.special_discount_check > 0 && this.productDetails.is_wholesale !== 1) {
+        totalPrice = selectedValue * this.product_form.quantity * (1 - this.productDetails.product_stock.discount_percentage / 100);
+      } else {
+        totalPrice = selectedValue * this.product_form.quantity;
+      }
+
+      this.total_price = totalPrice;
+    },
+
     activeImage(imageIndex) {
       this.current_index = imageIndex;
       this.large_image = this.productDetails.gallery.large[imageIndex];
@@ -861,8 +902,7 @@ export default {
 			});
 		},
 		priceFind() {
-			let price = this.productDetails.price;
-
+			let price = this.selectedValue ||  this.productDetails.price;
 			if (this.productDetails.wholesale_prices) {
 				let whole_sales = this.productDetails.wholesale_prices;
 
@@ -966,6 +1006,7 @@ export default {
 		cartPlus() {
 			if (this.product_form.quantity != this.firstStock.stock && this.product_form.quantity < this.firstStock.stock) {
 				this.product_form.quantity++;
+        this.updateTotalPrice();
 			} else {
 				toastr.warning(this.lang.Only + " " + this.firstStock.stock + " " + this.lang.items_available_at_this_time, this.lang.Error + " !!");
 			}
@@ -973,6 +1014,7 @@ export default {
 		cartMinus() {
 			if (this.product_form.quantity > this.productDetails.minimum_order_quantity) {
 				this.product_form.quantity--;
+        this.updateTotalPrice();
 			} else {
 				toastr.warning(this.lang.please_order_minimum_of + " " + this.productDetails.minimum_order_quantity + " " + this.lang.Quantity, this.lang.Warning + " !!");
 			}
