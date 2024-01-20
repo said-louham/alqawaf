@@ -345,7 +345,7 @@ class ProductController extends Controller
         try {
             $this->products->update($request);
 
-            $existingAttributeValues = $product->attributeValues->keyBy('attribute_value_id');
+            $existingAttributeValues = $product->ProductattributeValues->keyBy('attribute_value_id');
 
             if ($request->has('product_attribute_values') && isset($request->product_attribute_values[1])) {
                 $attributeValues = collect($request->product_attribute_values[1]);

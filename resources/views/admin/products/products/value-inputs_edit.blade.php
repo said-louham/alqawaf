@@ -6,7 +6,7 @@
         </div>
         <div class="col-md-9">
             @php $count = 0; @endphp
-            @foreach($attribute->attributeValue as $value)
+            @foreach($attribute->attributeValue  as $value)
                 @if($count % 2 == 0)
                     <div class="row">
                 @endif
@@ -14,7 +14,7 @@
                     <label for="price_{{ $attribute->id }}_{{ $value->id }}">
                         <span class="font-weight-bold">{{ $value->value }}</span> Price
                     </label>
-                    @foreach($product->attributeValues as $productValue)
+                    @foreach($product->ProductattributeValues as $productValue)
                         @if($productValue['attribute_id'] == $attribute->id && $productValue['attribute_value_id'] == $value->id)
                             <?php $price = $productValue['price']; ?>
                         @endif

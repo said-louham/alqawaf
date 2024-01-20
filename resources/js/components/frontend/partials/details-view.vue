@@ -183,11 +183,13 @@
             </h3>
 
               <div class="form-group ">
-                  <label for="attributeValues">Select Attribute Value:</label>
-                  <select class="form-control text-center bg-danger" v-model="selectedValue" id="attributeValues">
+               <label class="text-center">
+                  {{productDetails.form.product_attribute_values[0].attribute.attribute_language[1].title}}
+               </label>
+                  <select class="form-control text-center" v-model="selectedValue" id="attributeValues">
                       <option value="" disabled>Select an option</option>
                       <option v-for="option in productDetails.form.product_attribute_values" :key="option.id" :value="option.price">
-                          {{ option.attribute_value.value }}
+                          {{ option.attribute_value.value }} - {{option.price}}
                       </option>
                   </select>
               </div>
@@ -782,7 +784,7 @@ export default {
         totalPrice = selectedValue * this.product_form.quantity;
       }
 
-      this.total_price = totalPrice;
+      this.total_price = totalPrice.toFixed(2);
     },
 
     activeImage(imageIndex) {

@@ -992,12 +992,6 @@
                                     </div>
                                 @endif
 
-
-
-
-
-
-                                -------------------------------------------------------------------------------------------------
                                 <div class="card">
                                     <div class="card-header extra-padding d-flex justify-content-space-between">
                                         <h4>{{ __('Attribute values') }}</h4>
@@ -1043,11 +1037,6 @@
                                         </div>
                                     </div>
                                 </div>
-
-                                -------------------------------------------------------------------------------------------------
-
-
-
 
                             </div>
                             <div class="tab-pane fade" id="description-and-specification" role="tabpane6"
