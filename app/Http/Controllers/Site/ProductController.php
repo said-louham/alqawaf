@@ -222,17 +222,9 @@ class ProductController extends Controller
                 }
             }*/
 
-//            $attributeData = $product->attribute()->with(['attributeLanguage' => function ($query) {$query->where('attributeLanguage.lang', '=', App::getLocale());}])->first();
-
             $product->form          = [
                 'attribute_values'  => [],
-                'product_attribute_values' => $product->ProductattributeValues()->with([
-                     'attributeValue',
-                    'attribute',
-                    'attribute.attributeLanguage'
-                ])->get() ,
-//                'attribute_data'         =>$attributeData,
-//                  'attribute_data'         =>$product->attribute()->with('attributeLanguage')->get(),
+                'product_attribute_values' => $product->ProductattributeValues()->with(['attributeValue', 'attribute', 'attribute.attributeLanguage'])->get() ,
                 'id'                => $product->id,
                 'quantity'          => $product->minimum_order_quantity ? (int)$product->minimum_order_quantity : 1,
             ];
