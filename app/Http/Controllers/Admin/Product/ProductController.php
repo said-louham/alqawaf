@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin\Product;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Product\ProductStoreRequest;
+use App\Models\Attribute;
+use App\Models\ProductAttributeValue;
 use App\Models\ProductStock;
 use App\Models\ReviewReply;
 use App\Repositories\Interfaces\Site\ReviewInterface;
@@ -136,9 +138,8 @@ class ProductController extends Controller
             'colors'        => $this->colors->all()->where('lang', 'en')->get(),
             'attributes'    => $this->attributes->all()->where('lang', 'en')->get(),
             'campaigns'     => \App\Models\Campaign::where('status', 1)->where('end_date','>',Carbon::now()->format('Y-m-d'))->get(),
-            'r'             => $request->r != ''? $request->r : $request->server('HTTP_REFERER')
+            'r'             => $request->r != ''? $request->r : $request->server('HTTP_REFERER'),
         ];
-
         return view('admin.products.products.form',$data);
     }
     public function createDigitalProduct(Request $request)
@@ -247,10 +248,24 @@ class ProductController extends Controller
 
         DB::beginTransaction();
         try {
-            $this->products->store($request);
+          $product=  $this->products->store($request);
+
+          if ($request->has('product_attribute_values') && isset($request->product_attribute_values[1])) {
+                $attributeValues = collect($request->product_attribute_values[1]);
+
+                $attributeValues->each(function ($value) use ($product, $request) {
+
+                    $product->ProductattributeValues()->create([
+                        'attribute_id' => $request->attribute_id,
+                        'attribute_value_id' =>  $value['attribute_value_id'],
+                        'price' => $value['price'],
+                    ]);
+                });
+            }
             Toastr::success(__('Created Successfully'));
             session()->forget('attributes');
             DB::commit();
+
             return redirect()->route('products');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -259,12 +274,13 @@ class ProductController extends Controller
         }
     }
 
-    public function update(Request $request)
+     public function update(Request $request)
     {
-        if (isDemoServer()):
+        if (isDemoServer()) {
             Toastr::info(__('This function is disabled in demo server.'));
+
             return redirect()->back();
-        endif;
+        }
 
         DB::beginTransaction();
         try {
@@ -278,64 +294,91 @@ class ProductController extends Controller
             $product = $this->products->get($request->id);
 
             $validator = Validator::make($request->all(), [
-                'name' => 'required|max:190',
-                'slug' => 'nullable|nullable|max:190|unique:products,slug,' . $request->id,
-                'category' => 'required',
-                'price' => 'numeric|required',
-                'unit' => 'required',
-                'variant_sku.*' => 'required_if:has_variant,1|distinct|unique:product_stocks,sku',
-                'video_url' => 'required_with:video_provider',
-                'minimum_order_quantity' => 'numeric|min:1',
-                'low_stock_to_notify' => 'numeric|min:0',
-                'shipping_fee' => 'required_if:shipping_type,flat_rate',
+                'name'                    => 'required|max:190',
+                'slug'                    => 'nullable|nullable|max:190|unique:products,slug,' . $request->id,
+                'category'                => 'required',
+                'price'                   => 'numeric|required',
+                'unit'                    => 'required',
+                'variant_sku.*'           => 'required_if:has_variant,1|distinct|unique:product_stocks,sku',
+                'video_url'               => 'required_with:video_provider',
+                'minimum_order_quantity'  => 'numeric|min:1',
+                'low_stock_to_notify'     => 'numeric|min:0',
+                'shipping_fee'            => 'required_if:shipping_type,flat_rate',
                 'special_discount_period' => 'required_with:special_discount_type',
-                'special_discount' => 'required_with:special_discount_type',
-                'campaign_discount' => 'required_with:campaign',
-                'campaign_discount_type' => 'required_with:campaign'
+                'special_discount'        => 'required_with:special_discount_type',
+                'campaign_discount'       => 'required_with:campaign',
+                'campaign_discount_type'  => 'required_with:campaign',
             ]);
 
             DB::commit();
 
             if ($validator->fails()) {
                 DB::rollBack();
+
                 return back()->withInput()->withErrors($validator);
             }
 
-            if (!$request->has_variant && $product->stock()->first()) {
+            if (! $request->has_variant && $product->stock()->first()) {
                 $sku_validator = Validator::make($request->all(), [
                     'sku' => 'required_without_all:has_variant,is_classified|unique:product_stocks,sku,' . $product->stock()->first()->id,
                 ]);
 
                 if ($sku_validator->fails()) {
                     DB::rollBack();
+
                     return back()->withInput()->withErrors($sku_validator);
                 }
             }
-
         } catch (\Exception $e) {
             DB::rollBack();
+
             return back()->withInput()->withErrors($validator);
         }
 
-        if (isDemoServer()):
+        if (isDemoServer()) {
             Toastr::info(__('This function is disabled in demo server.'));
+
             return redirect()->back();
-        endif;
+        }
 
         DB::beginTransaction();
         try {
             $this->products->update($request);
+
+            $existingAttributeValues = $product->ProductattributeValues->keyBy('attribute_value_id');
+
+            if ($request->has('product_attribute_values') && isset($request->product_attribute_values[1])) {
+                $attributeValues = collect($request->product_attribute_values[1]);
+
+                $attributeValues->each(function ($value) use ($product, $request, $existingAttributeValues) {
+                    $attributeValueId = $value['attribute_value_id'];
+
+                    if ($existingAttributeValues->has($attributeValueId)) {
+                        $existingAttributeValues[$attributeValueId]->update([
+                            'price' => $value['price'],
+                        ]);
+                    } else {
+                        $product->ProductattributeValues()->create([
+                            'attribute_id'       => $request->attribute_id,
+                            'attribute_value_id' => $attributeValueId,
+                            'price'              => $value['price'],
+                        ]);
+                    }
+                });
+            }
+
             Toastr::success(__('Updated Successfully'));
             session()->forget('attributes');
             DB::commit();
+
             return redirect($request->r);
         } catch (\Exception $e) {
             DB::rollBack();
             Toastr::error($e->getMessage());
+
             return back();
         }
     }
-
 
     public function variants(Request $request)
     {
@@ -419,10 +462,34 @@ class ProductController extends Controller
     public function getAttributeValues(Request $request)
     {
         $attributes_sets = $request->attribute_sets;
-
         if (!empty($attributes_sets)):
             $attributes = $this->attributes->all()->whereIn('attributes.id', $attributes_sets)->where('lang','en')->get();
             return view('admin.products.products.values', compact('attributes','request','attributes_sets'));
+        else:
+            return '';
+        endif;
+    }
+
+        public function getProductAttributeValues(Request $request)
+    {
+        $attribute_values = $request->attribute_values;
+        if (!empty($attribute_values)):
+            $attributes = $this->attributes->all()->whereIn('attributes.id', $attribute_values)->where('lang','en')->get();
+
+            return view('admin.products.products.value-inputs', compact('attributes','request','attribute_values'));
+        else:
+            return '';
+        endif;
+    }
+       public function ProductattributeValuesEdite(Request $request)
+    {
+        $product = $this->products->get($request->id);
+
+     $attribute_values = $request->attribute_values;
+        if (!empty($attribute_values)):
+            $attributes = $this->attributes->all()->whereIn('attributes.id', $attribute_values)->where('lang','en')->get();
+
+            return view('admin.products.products.value-inputs_edit', compact('attributes','request','attribute_values','product'));
         else:
             return '';
         endif;
